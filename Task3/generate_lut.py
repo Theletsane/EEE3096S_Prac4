@@ -80,6 +80,6 @@ def generate_Triangle_lut():
     print("\n};")
 
 generate_SawTooth_lut()
-#generate_Triangle_lut()
-#generate_Sin_lut()
+generate_Triangle_lut()
+generate_Sin_lut()
 

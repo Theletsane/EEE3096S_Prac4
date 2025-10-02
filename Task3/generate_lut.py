@@ -79,6 +79,7 @@ def generate_Triangle_lut():
             print()  # New line every 10 values
     print("\n};")
 
-#generate_SawTooth_lut()
-generate_Triangle_lut()
+generate_SawTooth_lut()
+#generate_Triangle_lut()
+#generate_Sin_lut()
 

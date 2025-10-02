@@ -128,7 +128,26 @@ int main(void)
   // TODO: Write current waveform to LCD(Sine is the first waveform)
 
   // TODO: Enable DMA (start transfer from LUT to CCR)
+  /* USER CODE BEGIN 2 */
+  // Task 4.1: Start TIM3 in PWM mode on channel 3
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
 
+  // Task 4.2: Start TIM2 in Output Compare (OC) mode on channel 1
+  HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_1);
+
+  // Task 4.3: Start DMA in IT mode
+  // Source: Sin_LUT array, Destination: TIM3->CCR3, Length: NS samples
+  HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)Sin_LUT, DestAddress, NS);
+
+  // Task 4.4: Initialize LCD and write current waveform
+  init_LCD();
+  lcd_command(CLEAR);
+  lcd_putstring("Sine");
+
+  // Task 4.5: Enable DMA (start transfer from LUT to CCR3)
+  __HAL_TIM_ENABLE_DMA(&htim2, TIM_DMA_CC1);
+
+  /* USER CODE END 2 */
   /* USER CODE END 2 */
 
   /* Infinite loop */

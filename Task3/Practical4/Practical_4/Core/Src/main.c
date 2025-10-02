@@ -37,7 +37,7 @@
 #define NS 128      // Number of samples in LUT
 #define TIM2CLK 16000000  // STM Clock frequency: Hint You might want to check the ioc file
 #define F_SIGNAL 440	// Frequency of output analog signal
-#define TIM2_TICKS ((TIM2CLK) / ((NS) * (F_SIGNAL)))
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -142,15 +142,13 @@ uint32_t Sin_LUT[NS] = {
 // Remove this line: uint32_t TIM2_Ticks = 0;  // DELETE THIS
 uint32_t DestAddress = (uint32_t) &(TIM3->CCR3);
 /* USER CODE END PV */
-uint32_t Guitar_LUT = {};
-uint32_t Drum_LUT = {};
 
 
 
 
 
 // TODO: Equation to calculate TIM2_Ticks
-uint32_t TIM2_Ticks = 0; // How often to write new LUT value
+uint32_t TIM2_Ticks = ((TIM2CLK) / ((NS) * (F_SIGNAL))); // How often to write new LUT value
 uint32_t DestAddress = (uint32_t) &(TIM3->CCR3); // Write LUT TO TIM3->CCR3 to modify PWM duty cycle
 
 

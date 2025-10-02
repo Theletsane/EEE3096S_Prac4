@@ -34,10 +34,10 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 // TODO: Add values for below variables
-#define NS        // Number of samples in LUT
-#define TIM2CLK   // STM Clock frequency: Hint You might want to check the ioc file
-#define F_SIGNAL  	// Frequency of output analog signal
-
+#define NS 128      // Number of samples in LUT
+#define TIM2CLK 16000000  // STM Clock frequency: Hint You might want to check the ioc file
+#define F_SIGNAL 440	// Frequency of output analog signal
+#define TIM2_TICKS ((TIM2CLK) / ((NS) * (F_SIGNAL)))
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -45,17 +45,18 @@
 
 /* USER CODE END PM */
 
-/* Private variables ---------------------------------------------------------*/
-TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim3;
-DMA_HandleTypeDef hdma_tim2_ch1;
-
 /* USER CODE BEGIN PV */
-// TODO: Add code for global variables, including LUTs
-uint32_t Sin_LUT[NS] = {};
-uint32_t Saw_LUT[NS] = {};
-uint32_t Triangle_LUT[NS] = {};
-uint32_t Piano_LUT = {};
+// Task 1: Global variables including LUTs
+uint32_t Sin_LUT[NS] = {0};
+uint32_t Saw_LUT[NS] = {0};
+uint32_t Triangle_LUT[NS] = {0};
+uint32_t Piano_LUT[NS] = {0};
+uint32_t Guitar_LUT[NS] = {0};
+uint32_t Drum_LUT[NS] = {0};
+
+// Remove this line: uint32_t TIM2_Ticks = 0;  // DELETE THIS
+uint32_t DestAddress = (uint32_t) &(TIM3->CCR3);
+/* USER CODE END PV */
 uint32_t Guitar_LUT = {};
 uint32_t Drum_LUT = {};
 

@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include "stm32f4xx.h"
 #include "lcd_stm32f4.h"
+
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,7 +39,7 @@
 #define NS 128      // Number of samples in LUT
 #define TIM2CLK 16000000  // STM Clock frequency: Hint You might want to check the ioc file
 #define F_SIGNAL 440	// Frequency of output analog signal
-
+#define TIM2_Ticks (uint32_t)((TIM2CLK) / ((NS) * (F_SIGNAL)))
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -140,17 +142,17 @@ uint32_t Sin_LUT[NS] = {
 	    1264,    1358,    1453,    1550,    1648,    1747,    1847,    1947,
 	};
 // Remove this line: uint32_t TIM2_Ticks = 0;  // DELETE THIS
-uint32_t DestAddress = (uint32_t) &(TIM3->CCR3);
 /* USER CODE END PV */
 
-
-
-
+TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim3;
+DMA_HandleTypeDef hdma_tim2_ch1;
 
 // TODO: Equation to calculate TIM2_Ticks
-uint32_t TIM2_Ticks = ((TIM2CLK) / ((NS) * (F_SIGNAL))); // How often to write new LUT value
-uint32_t DestAddress = (uint32_t) &(TIM3->CCR3); // Write LUT TO TIM3->CCR3 to modify PWM duty cycle
+ // How often to write new LUT value
 
+uint32_t DestAddress = (uint32_t) &(TIM3->CCR3); // Write LUT TO TIM3->CCR3 to modify PWM duty cycle
+volatile uint8_t current_waveform = 0;
 
 /* USER CODE END PV */
 
@@ -203,15 +205,17 @@ int main(void)
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   // TODO: Start TIM3 in PWM mode on channel 3
-
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
   // TODO: Start TIM2 in Output Compare (OC) mode on channel 1
-
+  HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_1);
   // TODO: Start DMA in IT mode on TIM2->CH1. Source is LUT and Dest is TIM3->CCR3; start with Sine LUT
-
+  HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)Sin_LUT, DestAddress, NS);
   // TODO: Write current waveform to LCD(Sine is the first waveform)
-
+  init_LCD();
+  lcd_command(CLEAR);
+  lcd_putstring("Sine");
   // TODO: Enable DMA (start transfer from LUT to CCR)
-
+  __HAL_TIM_ENABLE_DMA(&htim2, TIM_DMA_CC1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -477,17 +481,66 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 void EXTI0_IRQHandler(void){
-
-	// TODO: Debounce using HAL_GetTick()
-
-
-	// TODO: Disable DMA transfer and abort IT, then start DMA in IT mode with new LUT and re-enable transfer
-	// HINT: Consider using C's "switch" function to handle LUT changes
-
-
-
-
-	HAL_GPIO_EXTI_IRQHandler(Button0_Pin); // Clear interrupt flags
+    // Debounce using HAL_GetTick()
+    static uint32_t last_interrupt_time = 0;
+    uint32_t current_time = HAL_GetTick();
+    
+    // Only process if 200ms has passed since last interrupt (debouncing)
+    if (current_time - last_interrupt_time > 200) {
+        last_interrupt_time = current_time;
+        
+        // Disable DMA transfer and abort IT
+        __HAL_TIM_DISABLE_DMA(&htim2, TIM_DMA_CC1);
+        HAL_DMA_Abort_IT(&hdma_tim2_ch1);
+        
+        // Move to next waveform (cycle through 0-5)
+        current_waveform = (current_waveform + 1) % 6;
+        
+        // Start DMA in IT mode with new LUT and update LCD
+        switch(current_waveform) {
+            case 0:  // Sine wave
+                HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)Sin_LUT, DestAddress, NS);
+                lcd_command(CLEAR);
+                lcd_putstring("Sine");
+                break;
+                
+            case 1:  // Sawtooth wave
+                HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)Saw_LUT, DestAddress, NS);
+                lcd_command(CLEAR);
+                lcd_putstring("Sawtooth");
+                break;
+                
+            case 2:  // Triangle wave
+                HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)Triangle_LUT, DestAddress, NS);
+                lcd_command(CLEAR);
+                lcd_putstring("Triangle");
+                break;
+                
+            case 3:  // Piano sound
+                HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)Piano_LUT, DestAddress, NS);
+                lcd_command(CLEAR);
+                lcd_putstring("Piano");
+                break;
+                
+            case 4:  // Guitar sound
+                HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)Guitar_LUT, DestAddress, NS);
+                lcd_command(CLEAR);
+                lcd_putstring("Guitar");
+                break;
+                
+            case 5:  // Drum sound
+                HAL_DMA_Start_IT(&hdma_tim2_ch1, (uint32_t)Drum_LUT, DestAddress, NS);
+                lcd_command(CLEAR);
+                lcd_putstring("Drum");
+                break;
+        }
+        
+        // Re-enable DMA transfer
+        __HAL_TIM_ENABLE_DMA(&htim2, TIM_DMA_CC1);
+    }
+    
+    // Clear interrupt flags (must be at the end)
+    HAL_GPIO_EXTI_IRQHandler(Button0_Pin);
 }
 /* USER CODE END 4 */
 
